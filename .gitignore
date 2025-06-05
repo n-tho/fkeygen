@@ -1,0 +1,6 @@
+build
+fkeygen.egg.info
+*.pyc
+.vs
+.idea
+fkeygen/__pycache__
