@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Phone Number XML Generator</title>
+
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        background: #f2f2f2;
+        color: #222;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 24px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      }
+
+      h1 {
+        margin-top: 0;
+        font-size: 26px;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr auto;
+        gap: 16px;
+        align-items: end;
+        margin-bottom: 20px;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      label {
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      input,
+      textarea {
+        font: inherit;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 10px 12px;
+      }
+
+      input:focus,
+      textarea:focus {
+        outline: none;
+        border-color: #555;
+      }
+
+      button {
+        cursor: pointer;
+        border: none;
+        border-radius: 8px;
+        padding: 11px 18px;
+        font-weight: 600;
+        background: #222;
+        color: white;
+      }
+
+      button:hover {
+        background: #444;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 420px;
+        box-sizing: border-box;
+        resize: vertical;
+        font-family: monospace;
+      }
+
+      .hint {
+        margin-top: 4px;
+        color: #666;
+        font-size: 13px;
+      }
+
+      @media (max-width: 700px) {
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <main class="container">
+      <h1>Phone Number XML Generator</h1>
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="phone-numbers">Phone Numbers</label>
+          <input
+            type="text"
+            id="phone-numbers"
+            placeholder="z.B. 10-20,25,30-35"
+          />
+          <div class="hint">Bereiche und einzelne Nummern sind möglich.</div>
+        </div>
+
+        <div class="field">
+          <label for="idskip">IDs to Skip</label>
+          <input type="text" id="idskip" placeholder="z.B. 0,1,5" />
+          <div class="hint">
+            Diese f-IDs werden übersprungen.(Start von 0, Taste 1 = 0)
+          </div>
+        </div>
+
+        <button onclick="generateXml()">Generate XML</button>
+      </div>
+
+      <textarea id="xml-output" placeholder="XML output..."></textarea>
+    </main>
+
+    <script>
+      function parseNumberInput(input) {
+        const result = [];
+        const parts = input.split(",");
+
+        for (const rawPart of parts) {
+          const part = rawPart.trim();
+
+          if (part === "") continue;
+
+          if (part.includes("-")) {
+            const rangeParts = part.split("-");
+            const start = parseInt(rangeParts[0].trim());
+            const end = parseInt(rangeParts[1].trim());
+
+            if (isNaN(start) || isNaN(end)) continue;
+
+            for (let number = start; number <= end; number++) {
+              result.push(String(number));
+            }
+
+            continue;
+          }
+
+          const number = parseInt(part);
+
+          if (!isNaN(number)) {
+            result.push(String(number));
+          }
+        }
+
+        return result;
+      }
+
+      function generateXml() {
+        const phoneNumbers = parseNumberInput(
+          document.getElementById("phone-numbers").value,
+        );
+
+        const skipIds = document
+          .getElementById("idskip")
+          .value.split(",")
+          .map((id) => parseInt(id.trim()))
+          .filter((id) => !isNaN(id));
+
+        let xmlOutput = "";
+
+        for (const currentNumber of phoneNumbers) {
+          const xmlString = generateXmlString(
+            currentNumber,
+            phoneNumbers,
+            skipIds,
+          );
+
+          xmlOutput += currentNumber + ":\n" + xmlString + "\n\n";
+        }
+
+        document.getElementById("xml-output").value = xmlOutput;
+      }
+
+      function generateXmlString(currentNumber, phoneNumbers, skipIds) {
+        let xml = "<phone>";
+        let idCounter = 0;
+
+        for (const number of phoneNumbers) {
+          if (number === currentNumber) continue;
+
+          while (skipIds.includes(idCounter)) {
+            idCounter++;
+          }
+
+          xml +=
+            `<f id="${idCounter}">` +
+            `<p e164="${number}" pr="1" di="1"></p>` +
+            `</f>`;
+
+          idCounter++;
+        }
+
+        xml += "</phone>";
+        return xml;
+      }
+    </script>
+  </body>
+</html>

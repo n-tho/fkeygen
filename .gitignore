@@ -4,3 +4,4 @@ fkeygen.egg.info
 .vs
 .idea
 fkeygen/__pycache__
+*.egg-info
